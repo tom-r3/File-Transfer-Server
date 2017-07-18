@@ -1,31 +1,42 @@
 import socket
-from threading import Thread
+from threading import Thread, Lock
 from SocketServer import ThreadingMixIn
+from struct import unpack
 
 BUFFER_SIZE = 1024
 
+key_dict = {}
+key_lock = Lock()
+
 class ClientThread(Thread):
 
-    def __init__(self,ip,port,sock):
+    def __init__(self,host,port,sock):
         Thread.__init__(self)
-        self.ip = ip
+        self.host = host
         self.port = port
         self.sock = sock
-        print " New thread started for "+ip+":"+str(port)
+        print " New thread started for "+ host + ":" +str(port)
 
     def run(self):
-        filename='mytext.txt'
-        f = open(filename,'rb')
-        while True:
-            l = f.read(BUFFER_SIZE)
-            while (l):
-                self.sock.send(l)
-                #print('Sent ',repr(l))
-                l = f.read(BUFFER_SIZE)
-            if not l:
-                f.close()
-                self.sock.close()
-                break
+        ctrlinfo = self.sock.recv(BUFFER_SIZE)
+        ctrlinfo = unpack('c8s', ctrlinfo)
+        req_type = ctrlinfo[0]
+        key = ctrlinfo[1]
+        print 'req: ' + ctrlinfo[0] + ' key: ' + ctrlinfo[1]
+        self.sock.close()
+
+        #filename='mytext.txt'
+        #f = open(filename,'rb')
+        #while True:
+        #    l = f.read(BUFFER_SIZE)
+        #    while (l):
+        #        self.sock.send(l)
+        #        #print('Sent ',repr(l))
+        #        l = f.read(BUFFER_SIZE)
+        #    if not l:
+        ##        f.close()
+         #       self.sock.close()
+         #       break
 
 # create connection
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,9 +54,9 @@ with open('port', 'wb') as p:
 while True:
     s.listen(5)
     print "Waiting for incoming connections on port " + str(port) + " and host " + socket.gethostname()
-    (conn, (ip,port)) = s.accept()
-    print 'Got connection from ', (ip,port)
-    newthread = ClientThread(ip,port,conn)
+    (conn, (host,port)) = s.accept() # blocks until a new client connects
+    print 'Got connection from ', (host,port)
+    newthread = ClientThread(host,port,conn)
     newthread.start()
     threads.append(newthread)
 
