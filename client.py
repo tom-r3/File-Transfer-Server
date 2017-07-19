@@ -1,5 +1,6 @@
 import socket, sys
 from struct import pack
+from time import sleep
 
 #download: client <host> <port> G<key> <file name> <recv size>
 #upload: client <host> <port> P<key> <file name> <send size> <wait time>
@@ -8,7 +9,7 @@ host = sys.argv[1] #socket.gethostname()
 port = int(sys.argv[2])
 print 'host: ' + host + ', port: ' + str(port)
 
-BUFFER_SIZE = 1024
+BUFFER_SIZE = int(sys.argv[5])
 
 # connect to server
 s = socket.socket()
@@ -38,12 +39,16 @@ if command == 'G': #download
 			in_data = s.recv(BUFFER_SIZE)
 			
 elif command == 'P': #upload
+	#get sleep time in milliseconds
+	sleep_time = int(sys.argv[6]) * 0.001
+
 	with open(sys.argv[4], 'rb') as f:
 		# send test data
 		out_data = f.read(BUFFER_SIZE)
 		while out_data:
 			print out_data
 			s.send(out_data)
+			sleep(sleep_time)
 			out_data = f.read(BUFFER_SIZE)
 
 #close file and socket
