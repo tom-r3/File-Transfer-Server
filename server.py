@@ -44,23 +44,34 @@ class ClientThread(Thread):
             opp_type = 'G'
 
         # check key list for match with the opposite type
-        if opp_type+key in KEY_LIST:
-            location = KEY_LIST.index(opp_type+key)
+        # do within lock in case index changes after
+        KS_LOCK.acquire()
+        try:
+            if opp_type+key in KEY_LIST:
+                location = KEY_LIST.index(opp_type+key)
+                list_socket = SOCKET_LIST[location]
+                in_list = 1
+            else:
+                in_list= 0;
+        finally:
+            KS_LOCK.release()
+
+        if in_list:
             if req_type == 'G': #download, need to send it data from list socket
-                transfer_data = SOCKET_LIST[location].recv(BUFFER_SIZE) #recieve data from list socket
+                transfer_data = list_socket.recv(BUFFER_SIZE) #recieve data from list socket
                 while transfer_data:
                     self.sock.send(transfer_data)
-                    transfer_data = SOCKET_LIST[location].recv(BUFFER_SIZE) #recieve data from list socket
+                    transfer_data = list_socket.recv(BUFFER_SIZE) #recieve data from list socket
                 #close uploader socket
                 self.sock.close()
             else: #upload
                 #transfer its data to list socket
                 transfer_data = self.sock.recv(BUFFER_SIZE)
                 while transfer_data:
-                    SOCKET_LIST[location].sendall(transfer_data)
+                    list_socket.send(transfer_data)
                     transfer_data = self.sock.recv(BUFFER_SIZE)
                 #close list download socket
-                SOCKET_LIST[location].close()
+                list_socket.close()
 
             #remove key/socket pair from lists
             KS_LOCK.acquire()
