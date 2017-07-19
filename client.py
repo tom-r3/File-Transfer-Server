@@ -27,14 +27,18 @@ if (len(key) > 8) or (command != 'P' and command != 'G' and command != 'F'):
 key = key.ljust(9, '\0')
 ctrlinfo = pack('!c8s', command, key)
 s.send(ctrlinfo)
-print str(len(ctrlinfo)) + '\n'
 
-# send test data
-data = 'this is test data'
-s.send(data)
-s.send(data)
-s.send(data)
-s.send(data)
+# listen or send depending on command
+if command == 'G': #download
+	in_data = s.recv(BUFFER_SIZE)
+	print in_data
+elif command == 'P': #upload
+	# send test data
+	data = 'this is test data, I am pretending to be an uploader'
+	s.send(data)
+elif command == 'F':
+	s.close()
+	print('connection closed')
 
 #with open(sys.argv[4], 'wb') as f:
   #  print 'file opened'
@@ -50,5 +54,3 @@ s.send(data)
 #        f.write(data)
 
 #print('Successfully get the file')
-s.close()
-print('connection closed')
