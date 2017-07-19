@@ -51,6 +51,8 @@ class ClientThread(Thread):
                 while transfer_data:
                     self.sock.send(transfer_data)
                     transfer_data = SOCKET_LIST[location].recv(BUFFER_SIZE) #recieve data from list socket
+                #close uploader socket
+                self.sock.close()
             else: #upload
                 #transfer its data to list socket
                 transfer_data = self.sock.recv(BUFFER_SIZE)
