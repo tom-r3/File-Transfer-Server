@@ -4,6 +4,7 @@ from SocketServer import ThreadingMixIn
 from struct import unpack
 
 BUFFER_SIZE = 1024
+CTRL_SIZE = 9
 
 KEY_LIST = []
 SOCKET_LIST = []
@@ -19,13 +20,13 @@ class ClientThread(Thread):
         print " New thread started for "+ host + ":" + str(port)
 
     def run(self):
-        in_data = self.sock.recv(BUFFER_SIZE)
-        if not in_data: 
+        ctrlinfo = self.sock.recv(CTRL_SIZE)
+        if not ctrlinfo: 
             print 'data error\n'
             exit()
 
         #process control info
-        ctrlinfo = in_data[0:9]
+        #ctrlinfo = in_data[0:9]
         ctrlinfo = unpack('c8s', ctrlinfo)
         req_type = ctrlinfo[0]
         key = ctrlinfo[1]
@@ -46,36 +47,36 @@ class ClientThread(Thread):
         if opp_type+key in KEY_LIST:
             location = KEY_LIST.index(opp_type+key)
             if req_type == 'G': #download, need to send it data from list socket
-                #transfer_data = SOCKET_LIST[location].recv(BUFFER_SIZE) #recieve data from list socket
-                #self.sock.send(transfer_data)
-                print 'req G \n'
-
-            else: #upload, need to transfer its data to list socket
-                transfer_data = in_data[9:]
-                print 'transfer_data: ' + transfer_data + '\n'
+                transfer_data = SOCKET_LIST[location].recv(BUFFER_SIZE) #recieve data from list socket
+                print 'G transfer_data: ' + transfer_data + '\n'
+                self.sock.send(transfer_data)
+            else: #upload
+                #transfer its data to list socket
+                #transfer_data = in_data[9:]
+                transfer_data = self.sock.recv(BUFFER_SIZE)
+                print 'P transfer_data: ' + transfer_data + '\n'
                 SOCKET_LIST[location].send(transfer_data)
 
+            #remove key/socket pair from lists
+            KS_LOCK.acquire()
+            try:
+                SOCKET_LIST.pop(location)
+                KEY_LIST.pop(location)
+            finally:
+                KS_LOCK.release()
 
-
-
-        #elif req_type == 'G': #download, so we need to send it data
-        #    SOCKET_LIST[0].send('respones test')
-        #elif req_type == 'P': #upload, so we need to collect its data
-        #    #process data
-        #    data = in_data[9:]
-        #    print 'in_data: ' + data + '\n's
-
-        # add new key/socket pair to lists
-        KS_LOCK.acquire()
-        try:
-            SOCKET_LIST.append(self.sock)
-            KEY_LIST.append(req_type + key)
-        finally:
-            KS_LOCK.release()
+        else: #not in list
+            # add new key/socket pair to lists
+            KS_LOCK.acquire()
+            try:
+                SOCKET_LIST.append(self.sock)
+                KEY_LIST.append(req_type + key)
+            finally:
+                KS_LOCK.release()
 
         # print the list for testing
-        #for s, k in zip(SOCKET_LIST, KEY_LIST):
-        #    print 'socket: ' + str(s.getsockname()) + ', key: ' + k + '\n'
+        for s, k in zip(SOCKET_LIST, KEY_LIST):
+            print 'socket: ' + str(s.getsockname()) + ', key: ' + k + '\n'
 
 
 

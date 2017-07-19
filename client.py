@@ -34,7 +34,7 @@ if command == 'G': #download
 	print in_data
 elif command == 'P': #upload
 	# send test data
-	data = 'this is test data, I am pretending to be an uploader'
+	data = 'this is test data, I am uploader ' + str(sys.argv[3])
 	s.send(data)
 elif command == 'F':
 	s.close()
