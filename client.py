@@ -27,8 +27,14 @@ if (len(key) > 8) or (command != 'P' and command != 'G' and command != 'F'):
 key = key.ljust(9, '\0')
 ctrlinfo = pack('!c8s', command, key)
 s.send(ctrlinfo)
+print str(len(ctrlinfo)) + '\n'
 
-print len(ctrlinfo)
+# send test data
+data = 'this is test data'
+s.send(data)
+s.send(data)
+s.send(data)
+s.send(data)
 
 #with open(sys.argv[4], 'wb') as f:
   #  print 'file opened'
