@@ -30,27 +30,24 @@ s.send(ctrlinfo)
 
 # listen or send depending on command
 if command == 'G': #download
-	in_data = s.recv(BUFFER_SIZE)
-	print in_data
+	with open(sys.argv[4], 'wb') as f:
+		in_data = s.recv(BUFFER_SIZE)
+		while in_data:
+			print in_data
+			f.write(in_data)
+			in_data = s.recv(BUFFER_SIZE)
+			
 elif command == 'P': #upload
-	# send test data
-	data = 'this is test data, I am uploader ' + str(sys.argv[3])
-	s.send(data)
-elif command == 'F':
-	s.close()
-	print('connection closed')
+	with open(sys.argv[4], 'rb') as f:
+		# send test data
+		out_data = f.read(BUFFER_SIZE)
+		while out_data:
+			print out_data
+			s.send(out_data)
+			out_data = f.read(BUFFER_SIZE)
 
-#with open(sys.argv[4], 'wb') as f:
-  #  print 'file opened'
- #   while True:
- #       #print('receiving data...')
- #       data = s.recv(BUFFER_SIZE)
- #       print('data=%s', (data))
- #       if not data:
- #           f.close()
-#            print 'file close()'
-#            break
-#        # write data to a file
-#        f.write(data)
+#close file and socket
+s.close()
+f.close()
+print('connection closed')
 
-#print('Successfully get the file')

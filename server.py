@@ -48,14 +48,17 @@ class ClientThread(Thread):
             location = KEY_LIST.index(opp_type+key)
             if req_type == 'G': #download, need to send it data from list socket
                 transfer_data = SOCKET_LIST[location].recv(BUFFER_SIZE) #recieve data from list socket
-                print 'G transfer_data: ' + transfer_data + '\n'
-                self.sock.send(transfer_data)
+                while transfer_data:
+                    self.sock.send(transfer_data)
+                    transfer_data = SOCKET_LIST[location].recv(BUFFER_SIZE) #recieve data from list socket
             else: #upload
                 #transfer its data to list socket
-                #transfer_data = in_data[9:]
                 transfer_data = self.sock.recv(BUFFER_SIZE)
-                print 'P transfer_data: ' + transfer_data + '\n'
-                SOCKET_LIST[location].send(transfer_data)
+                while transfer_data:
+                    SOCKET_LIST[location].sendall(transfer_data)
+                    transfer_data = self.sock.recv(BUFFER_SIZE)
+                #close list download socket
+                SOCKET_LIST[location].close()
 
             #remove key/socket pair from lists
             KS_LOCK.acquire()
@@ -78,22 +81,7 @@ class ClientThread(Thread):
         for s, k in zip(SOCKET_LIST, KEY_LIST):
             print 'socket: ' + str(s.getsockname()) + ', key: ' + k + '\n'
 
-
-
-        #SOCKET_LIST[0].send('respones test')
-
-        #filename='mytext.txt'
-        #f = open(filename,'rb')
-        #while True:
-        #    l = f.read(BUFFER_SIZE)
-        #    while (l):
-        #        self.sock.send(l)
-        #        #print('Sent ',repr(l))
-        #        l = f.read(BUFFER_SIZE)
-        #    if not l:
-        ##        f.close()
-         #       self.sock.close()
-         #       break
+#end ClientThread
 
 # create connection
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
