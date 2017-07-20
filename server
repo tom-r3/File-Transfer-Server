@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import socket
 from threading import *
 from SocketServer import ThreadingMixIn
@@ -22,7 +24,6 @@ class ClientThread(Thread):
         self.host = host
         self.port = port
         self.sock = sock
-        print " New thread started for "+ host + ":" + str(port)
 
     def run(self):
         ctrlinfo = self.sock.recv(CTRL_SIZE)
@@ -35,12 +36,8 @@ class ClientThread(Thread):
         ctrlinfo = unpack('c8s', ctrlinfo)
         req_type = ctrlinfo[0]
         key = ctrlinfo[1]
-        print 'req: ' + ctrlinfo[0] + ' key: ' + ctrlinfo[1] + '\n'
 
         if req_type == 'F':
-            print 'closing sockets'
-
-            #
             # close all waiting connection
             # ongoing connections will not be in list
             KST_LOCK.acquire()
@@ -55,8 +52,6 @@ class ClientThread(Thread):
             finally:
                 KST_LOCK.release()
 
-            #while len(TRANSFER_LIST) > 0:
-            #    print str(TRANSFER_LIST)
             DONE.wait()
             # close entire process
             _exit(0)
@@ -136,6 +131,7 @@ s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # tell the kernel to reu
 s.bind(("",0))
 port = s.getsockname()[1]
 
+print port
 # write port number to file for client
 with open('port', 'wb') as p: 
     p.write(str(port))
@@ -143,13 +139,10 @@ with open('port', 'wb') as p:
 # listen for incoming connections
 while True:
     s.listen(5)
-    print "Waiting for incoming connections on port " + str(port) + " and host " + socket.gethostname()
     (conn, (host,port)) = s.accept() # blocks until a new client connects
-    print 'Got connection from ', (host,port)
 
     newthread = ClientThread(host,port,conn)
     newthread.start()
 
-print 'closing main server'
 s.shutdown(socket.SHUT_RDWR)
 s.close()
