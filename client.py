@@ -9,8 +9,6 @@ host = sys.argv[1] #socket.gethostname()
 port = int(sys.argv[2])
 print 'host: ' + host + ', port: ' + str(port)
 
-BUFFER_SIZE = int(sys.argv[5])
-
 # connect to server
 s = socket.socket()
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -30,13 +28,18 @@ ctrlinfo = pack('!c8s', command, key)
 s.send(ctrlinfo)
 
 # listen or send depending on command
-if command == 'G': #download
+if command == 'F':
+	print 'closing client'
+	s.close()
+	exit()
+
+elif command == 'G': #download
 	with open(sys.argv[4], 'wb') as f:
-		in_data = s.recv(BUFFER_SIZE)
+		in_data = s.recv(int(sys.argv[5]))
 		while in_data:
 			print in_data
 			f.write(in_data)
-			in_data = s.recv(BUFFER_SIZE)
+			in_data = s.recv(int(sys.argv[5]))
 			
 elif command == 'P': #upload
 	#get sleep time in milliseconds
@@ -44,12 +47,12 @@ elif command == 'P': #upload
 
 	with open(sys.argv[4], 'rb') as f:
 		# send test data
-		out_data = f.read(BUFFER_SIZE)
+		out_data = f.read(int(sys.argv[5]))
 		while out_data:
 			print out_data
 			s.send(out_data)
 			sleep(sleep_time)
-			out_data = f.read(BUFFER_SIZE)
+			out_data = f.read(int(sys.argv[5]))
 
 #close file and socket
 s.close()
