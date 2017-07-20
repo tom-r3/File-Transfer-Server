@@ -1,11 +1,9 @@
 import socket, sys
 from struct import pack
 from time import sleep
+from tempfile import TemporaryFile
 
-#download: client <host> <port> G<key> <file name> <recv size>
-#upload: client <host> <port> P<key> <file name> <send size> <wait time>
-
-host = sys.argv[1] #socket.gethostname()
+host = sys.argv[1]
 port = int(sys.argv[2])
 print 'host: ' + host + ', port: ' + str(port)
 
@@ -33,26 +31,34 @@ if command == 'F':
 	s.close()
 	exit()
 
-elif command == 'G': #download
-	with open(sys.argv[4], 'wb') as f:
+# set up the file
+if sys.argv[4].isdigit() and command == 'P':
+	f = TemporaryFile()
+	f.write("T" * int(sys.argv[4]))
+else:
+	if command == 'G':
+		f = open(sys.argv[4], 'wb')
+	elif command == 'P':
+		f = open(sys.argv[4], 'rb')
+
+if command == 'G': #download
+	in_data = s.recv(int(sys.argv[5]))
+	while in_data:
+		print in_data
+		f.write(in_data)
 		in_data = s.recv(int(sys.argv[5]))
-		while in_data:
-			print in_data
-			f.write(in_data)
-			in_data = s.recv(int(sys.argv[5]))
 			
 elif command == 'P': #upload
 	#get sleep time in milliseconds
 	sleep_time = int(sys.argv[6]) * 0.001
 
-	with open(sys.argv[4], 'rb') as f:
-		# send test data
+	# send test data
+	out_data = f.read(int(sys.argv[5]))
+	while out_data:
+		print out_data
+		s.send(out_data)
+		sleep(sleep_time)
 		out_data = f.read(int(sys.argv[5]))
-		while out_data:
-			print out_data
-			s.send(out_data)
-			sleep(sleep_time)
-			out_data = f.read(int(sys.argv[5]))
 
 #close file and socket
 s.close()

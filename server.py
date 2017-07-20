@@ -40,6 +40,7 @@ class ClientThread(Thread):
         if req_type == 'F':
             print 'closing sockets'
 
+            #
             # close all waiting connection
             # ongoing connections will not be in list
             KST_LOCK.acquire()
