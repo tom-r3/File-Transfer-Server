@@ -5,3 +5,22 @@ DESIGN:
 The server is multithreaded. The main thread loops forever, blocking on accept until a connection is present. On a new connection, it starts a new thread for that specific connection. The threads all share access to three synchronized lists which track sockets (both waiting and transferring) as well as keys and are protected by a lock. First, the lists are checked for an opposite match (P/G), and if there is one the socket is placed in the transferring list and the transfer begins. A DONE event is also cleared at the beginning of a thread being added. If the key is not in the lists, it is added to them. At the end, the thread checks if all the lists are empty and if so it sets the DONE event so that the server can end if someone calls F. 
 
 The client sends the control info, then checks the command. On F it simply exits. On P or G it opens the appropriate file or creates a temporary one. It then blocks on recv or send (although the TCP buffer is large enough that it doesnt always block on send) until the server creates a match. Once that happens the client sends or receives all data then terminates.
+
+The client takes up to 6 parameters and can be invoked in 3 different ways:
+
+terminate server: client host port F
+download: client host port Gkey file-name recv-size
+upload: client host port Pkey file-name send-size wait time
+
+The client creates a TCP socket and connects to the server at host and port.
+It then transmits the command string given in the 3rd shell parameter to the server.
+
+When requesting an upload or download, it reads data from or stores data to, respectively, the file specified in the 4th parameter.
+When uploading and the 4th parameter is given as an integer number, the number is taken as the virtual file size in bytes.
+In this case, the sender application does not transmit the contents of an actual file, but empty/random data equivalent to the virtual file size.
+
+The 5th parameter specifies the size of the buffer that is transmitted during each individual write/send or read/recv system call during the file transfer - except for the final data chunk that might be smaller.
+
+When uploading a file, the 6th parameter specifies a wait time in milliseconds between subsequent write/send system calls.
+
+
